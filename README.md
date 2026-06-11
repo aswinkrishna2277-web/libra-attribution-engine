@@ -10,31 +10,55 @@ scoring, mandatory sensitivity analysis, and a court/regulator-ready dossier.
 
 *To copyright settlements what recognized-loss plans are to securities settlements.*
 
+## Live demo
+
+**Try it:** https://YOUR-APP-URL.streamlit.app
+
 ## Why
+
 In *Bartz v. Anthropic* (~$1.5B, the largest copyright recovery in U.S. history), allocation was a
 flat ~$3,000 per work across ~500,000 works — and class members formally objected to its fairness,
 with no principled alternative methodology to invoke. Libra is designed to be that methodology.
 
 ## Run locally
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Deploy free (public URL in ~5 minutes)
-1. Push this folder to a public GitHub repo.
-2. Go to share.streamlit.io → New app → select the repo, branch `main`, file `app.py` → Deploy.
-3. Your app is live at `https://<your-app>.streamlit.app` — link it on your CV/LinkedIn.
-
 ## CSV schema (upload your own corpus)
+
 `work_id, title, author, rightsholder_id, text, in_print, retail_available, pub_year`
 
-## Honest limits (Standard §2)
-Libra operates only on a **known corpus** (contract, disclosure, discovery, settlement works list).
-It does not infer what a black-box model was trained on; similarity evidences presence and weight,
-never causation. Current status: pre-validation prototype (Standard §7 benchmark pending).
+## Validation status (Standard §5)
 
-## Files
-- `libra_engine.py` — Module A engine (v0.2), fully spec-conformant
-- `app.py` — Streamlit interface
-- Standard, red-team memo, audit report and authorities file accompany the engine.
+**Validated against Libra Benchmark v1 (measurable layer):** calibration mean absolute error 0.0005
+across engineered copy-fractions 0.1-0.9; false-positive baseline <= 0.0001 on independent real texts;
+rightsholder consolidation and cross-process reproducibility PASS. Independent replication and
+scale testing pending.
+
+## Honest limits (Standard §2)
+
+Libra operates only on a **known corpus** (contract, disclosure, discovery, settlement works list).
+It does **not** infer what a black-box model was trained on; similarity evidences presence and weight,
+never causation. The cross-claimant redundancy discount is symmetric in v1 (a provenance-priority
+factor is scheduled for v2).
+
+## Repository contents
+
+- `libra_engine.py` - Module A engine (v0.2), spec-conformant and test-covered
+- `app.py` - Streamlit interface
+- `test_libra.py` - automated test suite (41 tests: unit, invariants, edge cases, end-to-end)
+- `sample_works.csv`, `sample_dirty.csv`, `sample_bad.csv` - example inputs for the demo
+- `requirements.txt` - dependencies
+
+The Libra Attribution Standard specification, validation report, and supporting scholarship are
+maintained separately and released on their own timeline.
+
+## Verify the tests yourself
+
+```bash
+pip install pytest
+python -m pytest test_libra.py -v
+```
