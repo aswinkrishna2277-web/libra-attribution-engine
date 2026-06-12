@@ -12,7 +12,7 @@ scoring, mandatory sensitivity analysis, and a court/regulator-ready dossier (US
 
 ## Live demo
 
-**Try it:** https://YOUR-APP-URL.streamlit.app
+**Try it:** https://libra-attribution-engine.streamlit.app/
 
 ## Why
 
