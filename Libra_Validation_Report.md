@@ -53,6 +53,7 @@ Donor-side measurements mirror copier-side values, empirically confirming the do
 2. **Genre dependence of the false-positive baseline.** Formulaic genres (legal boilerplate, liturgical text) repeat long word sequences and will raise the baseline; the highly repetitive KJV was deliberately excluded from controls. Genre-stratified baselines are scheduled for Benchmark v2.
 3. **Scale.** 32 claims validates correctness of behaviour, not performance at settlement scale (10⁵–10⁶ claims). Scale testing is an engineering exercise, scheduled.
 4. **Measurable layer only**, per §1.
+5. **Tokenization and normalization.** Shingling is whitespace-based and case-folded; punctuation and typographic variants count as distinct tokens, so `word.` and `word` produce different shingles. Real-world cross-edition overlap involving punctuation, quotation-mark, or hyphenation differences is therefore **under-detected**. The error direction is conservative and disclosed: it understates redundancy and never invents it, biasing in claimants' favour. Benchmark v1's calibration (M1) is unaffected by this gap because its engineered copies were constructed token-identically; the gap manifests only on organically divergent editions. Unicode/punctuation normalization is scheduled for v2 with full re-validation as Benchmark v1.1.
 
 ## 5. Effect on validation status
 
