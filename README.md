@@ -12,7 +12,7 @@ scoring, mandatory sensitivity analysis, and a court/regulator-ready dossier (US
 
 ## Live demo
 
-**Try it:** https://libra-attribution-engine.streamlit.app/
+**Try it:** https://YOUR-APP-URL.streamlit.app
 
 ## Why
 
@@ -54,7 +54,7 @@ presence and weight, never causation. The cross-claimant redundancy discount is 
 
 - `libra_engine.py` — Module A engine (v0.2), spec-conformant and test-covered
 - `app.py` — Streamlit interface
-- `test_libra.py` — automated test suite (41 tests; the benchmark-threshold test auto-skips in this
+- `test_libra.py` — automated test suite (42 tests; one auto-skips in this
   public distribution, since the benchmark *construction* module is proprietary — its published
   results are in the Validation Report, and replication access is available on request)
 - `Libra_Validation_Report.md` — published error characteristics (Benchmark v1)

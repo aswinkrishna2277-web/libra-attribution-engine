@@ -265,3 +265,22 @@ class TestBenchmarkThresholds:
         assert r["M2_false_positive_baseline"]["max_false_overlap"] < 0.01
         assert r["M3_consolidation"]["pass"] is True
         assert r["M4_anthology"]["abs_error"] < 0.05
+
+
+# ---------------------------- 10. PUBLISHED RESULTS ARTIFACT ----------------------
+class TestPublishedResults:
+    """Verifies the PUBLISHED benchmark_results.json meets the stated thresholds.
+    Runs for any stranger with the public repo — no proprietary module required."""
+
+    def setup_method(self):
+        import json, os
+        if not os.path.exists("benchmark_results.json"):
+            pytest.skip("benchmark_results.json not present alongside tests")
+        self.r = json.load(open("benchmark_results.json", encoding="utf-8"))
+
+    def test_published_thresholds_hold(self):
+        assert self.r["M1_calibration"]["MAE"] <= 0.0005
+        assert self.r["M2_false_positive_baseline"]["max_false_overlap"] <= 0.0001
+        assert self.r["M3_consolidation"]["pass"] is True
+        assert self.r["M5_reproducibility"]["identical"] is True
+        assert len(self.r["M5_reproducibility"]["sha256"]) == 64  # full digest published
