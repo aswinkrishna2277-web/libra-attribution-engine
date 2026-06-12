@@ -58,6 +58,6 @@ Donor-side measurements mirror copier-side values, empirically confirming the do
 
 Engine disclosure updated from "pre-validation prototype" to: **validated against Benchmark v1 on the measurable layer (calibration MAE 0.0005; false-positive baseline ≤ 0.0001; consolidation and reproducibility PASS); independent replication and scale testing pending.** Every generated report now carries this status with a pointer to this document.
 
-## 6. Asset note
+## 6. Reproducibility note (supersedes the earlier asset note)
 
-Benchmark v1's design, construction scripts, and results constitute the proprietary validation asset contemplated by Standard §7 (database-right protection contingent on the maker's establishment — see Standard §7 and Audit M2). The texts themselves are public domain; the *selection, engineering, and ground-truth labelling* are the protected investment.
+Benchmark v1 is published in full: the construction and evaluation script (`benchmark.py`), the complete results and manifest (`benchmark_results.json`), and the corpus recipe (README, "Reproduce the benchmark") are all in the public repository under Apache-2.0. The validation is therefore reproducible end-to-end by any stranger — ground-truth construction included; runs are seeded and deterministic, and the results file carries a full SHA-256 digest for comparison. Authorship and priority rest on the published, timestamped record itself.

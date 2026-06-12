@@ -254,11 +254,12 @@ class TestBenchmarkThresholds:
     """Re-runs Benchmark v1 and asserts the published error characteristics hold."""
 
     def test_benchmark_metrics(self):
+        import os
         benchmark = pytest.importorskip(
-            "benchmark",
-            reason="Benchmark construction module is not included in the public distribution; "
-                   "its published results are in Libra_Validation_Report.md and replication "
-                   "access is available on request.")
+            "benchmark", reason="benchmark.py not present in this distribution")
+        if not os.path.isdir("gutenberg"):
+            pytest.skip("Benchmark corpus not present. To reproduce the full benchmark, "
+                        "download the corpus per README ('Reproduce the benchmark') and re-run.")
         r = benchmark.evaluate()
         assert r["M1_calibration"]["MAE"] < 0.01
         assert r["M1_calibration"]["max_error"] < 0.02
@@ -270,7 +271,7 @@ class TestBenchmarkThresholds:
 # ---------------------------- 10. PUBLISHED RESULTS ARTIFACT ----------------------
 class TestPublishedResults:
     """Verifies the PUBLISHED benchmark_results.json meets the stated thresholds.
-    Runs for any stranger with the public repo — no proprietary module required."""
+    Runs for any stranger with the public repo — needs only the published results file."""
 
     def setup_method(self):
         import json, os

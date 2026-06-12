@@ -1,5 +1,5 @@
 """
-(c) 2026 Aswin Krishna. All rights reserved pending licence selection.
+Copyright 2026 Aswin Krishna. Licensed under the Apache License, Version 2.0 (see LICENSE).
 Libra Attribution Engine v0.2 — Module A: Corpus Apportionment
 Reference implementation of the Libra Attribution Standard v0.3
 Methodology: Aswin Krishna
@@ -25,7 +25,8 @@ import random
 SPEC_VERSION = "0.3"
 ENGINE_VERSION = "0.2"
 SHINGLE_K_DEFAULT = 8
-CURRENT_YEAR = 2026
+import datetime as _dt
+CURRENT_YEAR = _dt.date.today().year
 
 VALIDATION_STATUS = (
     "VALIDATED against Libra Benchmark v1 (measurable layer): calibration MAE 0.0005 "
@@ -346,7 +347,9 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency
 {mapping}
 **Consolidation statement (Standard §4 A2):** works were consolidated to rightsholder-claim level
 before any redundancy computation; within-claim duplication (editions) collapses by construction
-and is never discounted against the claimant.
+and is never discounted against the claimant. A consolidated claim's market-exposure score is the
+**maximum** across its constituent works (the claimant's strongest market position) — disclosed here
+because it is a methodological choice, not an inevitability.
 
 ## 2. Engineered cases (ground-truth behaviour)
 {tbl(eng)}
@@ -361,7 +364,10 @@ and is never discounted against the claimant.
 ## 5. Statement of limits (Standard §2)
 This allocation operates on a **known corpus**. It asserts relative contribution within that corpus;
 it does not assert what any black-box model was trained on. Similarity evidences presence and weight,
-never causation. All factors herein are Tier A (deterministic){' subject to the synthetic-metadata disclosure above' if synthetic_metadata else ''}.
+never causation. Tokenization is whitespace-based and case-folded; punctuation variants count as
+distinct tokens, so heavy punctuation differences between otherwise-identical texts reduce measured
+overlap (a conservative bias — it understates redundancy, never invents it; normalization is
+scheduled for v2 with full re-validation). All factors herein are Tier A (deterministic){' subject to the synthetic-metadata disclosure above' if synthetic_metadata else ''}.
 """
 
 

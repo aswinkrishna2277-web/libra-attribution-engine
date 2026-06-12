@@ -178,4 +178,4 @@ else:
 
 st.divider()
 st.caption(f"Libra Attribution Standard v{SPEC_VERSION} · Engine v{ENGINE_VERSION} · "
-           "Methodology: Aswin Krishna · © 2026 Aswin Krishna · Spec open, infrastructure owned. Not legal advice.")
+           "Methodology: Aswin Krishna · © 2026 Aswin Krishna · Apache-2.0 · Fully reproducible. Not legal advice.")
