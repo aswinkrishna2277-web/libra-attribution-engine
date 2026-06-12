@@ -12,13 +12,14 @@ scoring, mandatory sensitivity analysis, and a court/regulator-ready dossier (US
 
 ## Live demo
 
-**Try it:** https://libra-attribution-engine.streamlit.app/
+**Try it:** https://YOUR-APP-URL.streamlit.app
 
 ## Why
 
 In *Bartz v. Anthropic* (~$1.5B, the largest copyright recovery in U.S. history), allocation was a
-flat ~$3,000 per work across ~500,000 works — and class members formally objected to its fairness,
-with no principled alternative methodology to invoke. In class settlements, Libra is the objectors'
+flat ~$3,000 per work across ~500,000 works, and class members formally objected to its fairness.
+Flat per-work was a defensible choice — administrable, claim-parity — but objectors and the court
+had no principled *alternative* to weigh against it. In class settlements, Libra is the objectors'
 instrument: the concrete alternative that makes fairness review meaningful. In licensing pools and
 collective management — its primary home — it is the distribution policy itself.
 
@@ -57,6 +58,7 @@ presence and weight, never causation. The cross-claimant redundancy discount is 
   public distribution, since the benchmark *construction* module is proprietary — its published
   results are in the Validation Report, and replication access is available on request)
 - `Libra_Validation_Report.md` — published error characteristics (Benchmark v1)
+- `benchmark_results.json` — full benchmark outputs and manifest (results published; construction module proprietary)
 - `Libra_RedTeam_Memo.md` — the design record: the objections opposing counsel would raise,
   anticipated and addressed before release
 - `sample_works.csv`, `sample_dirty.csv`, `sample_bad.csv` — example inputs
