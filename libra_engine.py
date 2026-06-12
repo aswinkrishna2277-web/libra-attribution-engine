@@ -1,4 +1,5 @@
 """
+(c) 2026 Aswin Krishna. All rights reserved pending licence selection.
 Libra Attribution Engine v0.2 — Module A: Corpus Apportionment
 Reference implementation of the Libra Attribution Standard v0.3
 Methodology: Aswin Krishna
@@ -296,18 +297,22 @@ def build_demo_corpus(seed: int = 11) -> list:
 
 # -------------------------------- reporting ------------------------------------
 
-def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool) -> str:
+CURRENCY_SYMBOLS = {"USD": "$", "EUR": "€", "GBP": "£"}
+
+
+def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency: str = "USD") -> str:
+    cur = CURRENCY_SYMBOLS.get(currency, "$")
     n = len(rows)
     flat = pool / n
     eng = [r for r in rows if r["notes"]]
 
     def tbl(rs):
-        h = ("| Rightsholder | Works | Tokens | Distinct vol | Uniqueness | Market | Share | Libra USD | Flat USD | Δ |\n"
+        h = (f"| Rightsholder | Works | Tokens | Distinct vol | Uniqueness | Market | Share | Libra {currency} | Flat {currency} | Δ |\n"
              "|---|---|---|---|---|---|---|---|---|---|\n")
         return h + "".join(
             f"| {r['rightsholder']} | {r['n_works']} | {r['tokens']:,} | {r['distinct_volume']:,} "
             f"| {r['uniqueness']:.2f} | {r['market']:.2f} | {r['share_pct']:.2f}% "
-            f"| ${r['libra_usd']:,.0f} | ${r['flat_usd']:,.0f} | {r['delta_usd']:+,.0f} |\n" for r in rs)
+            f"| {cur}{r['libra_usd']:,.0f} | {cur}{r['flat_usd']:,.0f} | {r['delta_usd']:+,.0f} |\n" for r in rs)
 
     mapping = "| Metadata condition | Score |\n|---|---|\n" + "".join(
         f"| {c} | {s} |\n" for c, s in MARKET_MAPPING_TABLE)
@@ -325,7 +330,9 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool) -> str:
 
 > **Validation status (Standard §5, mandatory):** {VALIDATION_STATUS}
 {syn}
-**Claims:** {n} (after rightsholder consolidation) · **Pool:** ${pool:,.0f} · **Flat baseline:** ${flat:,.0f}/claim · **Shingle k:** {k}
+**Claims:** {n} (after rightsholder consolidation) · **Pool:** {cur}{pool:,.0f} {currency} · **Flat baseline:** {cur}{flat:,.0f}/claim · **Shingle k:** {k}
+
+> **Disclaimer:** research and demonstration output. Not legal advice; no professional relationship is created. Allocations are methodology results requiring professional review before any use in a live matter. Amounts are denominated in {currency}; the methodology is proportional and currency-agnostic (no exchange-rate conversion is performed or implied).
 
 ## 1. Mandatory methodology disclosure
 | Parameter | Value | Written rationale |
@@ -366,11 +373,11 @@ def rows_to_csv(rows) -> str:
     return buf.getvalue()
 
 
-def full_json(rows, sens, cfg, pool) -> str:
+def full_json(rows, sens, cfg, pool, currency: str = "USD") -> str:
     return json.dumps({
         "standard_version": SPEC_VERSION, "engine_version": ENGINE_VERSION,
         "validation_status": VALIDATION_STATUS,
-        "pool_usd": pool,
+        "pool": pool, "currency": currency,
         "weights": {"w_volume": cfg.w_volume, "w_market": cfg.w_market, "base_floor": cfg.base_floor},
         "rationale": cfg.rationale, "market_mapping_table": MARKET_MAPPING_TABLE,
         "sensitivity": sens, "allocations": rows,

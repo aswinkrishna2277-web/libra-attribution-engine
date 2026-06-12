@@ -48,6 +48,10 @@ st.markdown(
     "compensation: *to copyright settlements what recognized-loss plans are to securities settlements.*"
 )
 st.warning(f"**Validation status (Standard §5, mandatory disclosure):** {VALIDATION_STATUS}")
+st.caption("**Legal notice:** research & demonstration tool — not legal advice; outputs require professional review. "
+           "**Data protection:** do NOT upload confidential or personal data to this public demo "
+           "(it is processed on third-party cloud infrastructure). For real or sensitive works lists, "
+           "run Libra locally per the README — your data then never leaves your machine.")
 
 # ------------------------------- sidebar ----------------------------------------
 st.sidebar.header("Methodology parameters")
@@ -58,7 +62,10 @@ st.sidebar.caption(f"Weight: market-exposure = **{1 - w_volume:.2f}** (weights s
 base_floor = st.sidebar.slider("Base floor (tribunal-set parameter)", 0.0, 0.5, 0.15, 0.05,
                                help="Per-se inclusion value: share of the pool allocated equally per claim. "
                                     "Flat-rate is a 100% floor, undisclosed. Libra makes the choice explicit.")
-pool = st.sidebar.number_input("Compensation pool (USD)", min_value=1000.0,
+currency = st.sidebar.selectbox("Currency", ["USD", "EUR", "GBP"], index=0,
+                                help="Denomination label only — Libra's allocation is proportional and currency-agnostic; no exchange-rate conversion is performed.")
+CSYM = {"USD": "$", "EUR": "€", "GBP": "£"}[currency]
+pool = st.sidebar.number_input(f"Compensation pool ({currency})", min_value=1000.0,
                                value=1_500_000.0, step=50_000.0, format="%.0f")
 with st.sidebar.expander("A4 published mapping table"):
     st.table(pd.DataFrame(MARKET_MAPPING_TABLE, columns=["Metadata condition", "Score"]))
@@ -125,8 +132,8 @@ if works:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Works", len(works))
     c2.metric("Claims (after consolidation)", len(claims))
-    c3.metric("Flat-rate baseline / claim", f"${flat:,.0f}")
-    c4.metric("Pool", f"${pool:,.0f}")
+    c3.metric("Flat-rate baseline / claim", f"{CSYM}{flat:,.0f}")
+    c4.metric("Pool", f"{CSYM}{pool:,.0f}")
 
     df_rows = pd.DataFrame(rows)
     eng_rows = df_rows[df_rows["notes"] != ""]
@@ -141,6 +148,7 @@ if works:
     st.bar_chart(chart_df)
 
     st.subheader("Full allocation schedule")
+    st.caption(f"Monetary columns denominated in {currency}. Column keys retain the engine's internal *_usd naming for stability; values are {currency}.")
     st.dataframe(df_rows.drop(columns=["works"]), use_container_width=True, height=380)
 
     st.header("3 · Sensitivity analysis (Standard §5, mandatory)")
@@ -152,11 +160,11 @@ if works:
                "disclosed, not hidden.")
 
     st.header("4 · Download the dossier")
-    md = report_markdown(rows, sens, cfg, pool, engine.shingle_k, synthetic_metadata=synthetic)
+    md = report_markdown(rows, sens, cfg, pool, engine.shingle_k, synthetic_metadata=synthetic, currency=currency)
     d1, d2, d3 = st.columns(3)
     d1.download_button("📄 Allocation report (Markdown)", md, "libra_allocation_report.md")
     d2.download_button("🗂 Schedule (CSV)", rows_to_csv(rows), "libra_allocation_schedule.csv")
-    d3.download_button("🧾 Machine-readable (JSON)", full_json(rows, sens, cfg, pool),
+    d3.download_button("🧾 Machine-readable (JSON)", full_json(rows, sens, cfg, pool, currency),
                        "libra_allocation_report.json")
 
     with st.expander("Statement of limits (Standard §2)"):
@@ -170,4 +178,4 @@ else:
 
 st.divider()
 st.caption(f"Libra Attribution Standard v{SPEC_VERSION} · Engine v{ENGINE_VERSION} · "
-           "Methodology: Aswin Krishna · Spec open, infrastructure owned.")
+           "Methodology: Aswin Krishna · © 2026 Aswin Krishna · Spec open, infrastructure owned. Not legal advice.")
