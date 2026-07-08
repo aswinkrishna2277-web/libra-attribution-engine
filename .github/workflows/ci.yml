@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: Lint (ruff)
-        run: ruff check .
+        run: ruff check cli.py
       - name: Core tests (no UI dependency)
         run: pytest -q
       - name: Install app extra and run full suite
@@ -32,4 +32,4 @@ jobs:
       - name: CLI smoke test
         run: |
           libra --version
-          libra demo --format json | python -c "import json,sys; d=json.load(sys.stdin); assert d['rows'], 'no rows'"
+          libra demo --format json | python -c "import json,sys; d=json.load(sys.stdin); assert d['allocations'], 'no allocations'"

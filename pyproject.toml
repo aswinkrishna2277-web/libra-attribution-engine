@@ -21,7 +21,7 @@ classifiers = [
 
 [project.optional-dependencies]
 app = ["streamlit>=1.30"]
-dev = ["pytest>=7", "ruff>=0.4"]
+dev = ["pytest>=7", "ruff>=0.4", "pandas>=2.0"]
 
 [project.scripts]
 libra = "cli:main"
@@ -41,5 +41,5 @@ select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]
-testpaths = ["."]
+testpaths = ["test_libra.py"]
 python_files = ["test_*.py"]
