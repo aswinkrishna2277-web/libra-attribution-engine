@@ -1,0 +1,101 @@
+{
+  "config": {
+    "corpus": "40 synthetic works",
+    "n_originals": 40,
+    "n_shared_works": 32,
+    "copy_frac": 0.4,
+    "seed": 20260708,
+    "levels": [
+      0.0,
+      0.05,
+      0.2
+    ],
+    "shingle_k": 8,
+    "w_volume": 0.7,
+    "base_floor": 0.15
+  },
+  "conditions": [
+    {
+      "noise": "ocr",
+      "rate": 0.0,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.5455,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.4545,
+      "share_L1_drift_vs_clean": 0.0
+    },
+    {
+      "noise": "ocr",
+      "rate": 0.05,
+      "auc": 0.8438,
+      "mean_uniqueness_shared": 0.994,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.006,
+      "share_L1_drift_vs_clean": 0.170842
+    },
+    {
+      "noise": "ocr",
+      "rate": 0.2,
+      "auc": 0.5,
+      "mean_uniqueness_shared": 1.0,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.0,
+      "share_L1_drift_vs_clean": 0.172542
+    },
+    {
+      "noise": "edition",
+      "rate": 0.0,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.5455,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.4545,
+      "share_L1_drift_vs_clean": 0.0
+    },
+    {
+      "noise": "edition",
+      "rate": 0.05,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.7011,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.2989,
+      "share_L1_drift_vs_clean": 0.068073
+    },
+    {
+      "noise": "edition",
+      "rate": 0.2,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.9222,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.0778,
+      "share_L1_drift_vs_clean": 0.148171
+    },
+    {
+      "noise": "paraphrase",
+      "rate": 0.0,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.5455,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.4545,
+      "share_L1_drift_vs_clean": 0.0
+    },
+    {
+      "noise": "paraphrase",
+      "rate": 0.05,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.6016,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.3984,
+      "share_L1_drift_vs_clean": 0.027017
+    },
+    {
+      "noise": "paraphrase",
+      "rate": 0.2,
+      "auc": 1.0,
+      "mean_uniqueness_shared": 0.7469,
+      "mean_uniqueness_originals": 1.0,
+      "separation_gap": 0.2531,
+      "share_L1_drift_vs_clean": 0.087182
+    }
+  ],
+  "elapsed_sec": 0.79
+}
