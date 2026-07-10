@@ -101,7 +101,8 @@ def _emit(text: str, out: str | None) -> None:
 def cmd_score(args: argparse.Namespace) -> int:
     works = build_demo_corpus() if args.corpus == "demo" else load_corpus(Path(args.corpus))
     engine = CorpusApportionmentEngine(shingle_k=args.k)
-    claims = engine.analyze(works, k=args.k, w_volume=args.w_volume, base_floor=args.floor)
+    claims = engine.analyze(works, k=args.k, w_volume=args.w_volume, base_floor=args.floor,
+                            measure=args.measure)
     rows = engine.allocate(claims, args.pool)
     sens = engine.sensitivity(works)
     cfg = engine.config
@@ -145,6 +146,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="weight on the exposure measure, 0..1 (default: engine default 0.70)")
         sp.add_argument("--floor", type=float, default=None,
                         help="disclosed minimum-share floor, 0..1 (default: engine default 0.15)")
+        sp.add_argument("--measure", choices=("per-word", "per-work"), default=None,
+                        help="exposure basis: 'per-word' (default, volume-weighted) or "
+                             "'per-work' (length-normalised)")
         sp.add_argument("--pool", type=float, default=1_000_000.0,
                         help="pool size to allocate (default: 1,000,000)")
         sp.add_argument("--currency", default="USD", help="currency label for reports (default: USD)")

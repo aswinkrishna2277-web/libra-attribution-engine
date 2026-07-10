@@ -7,6 +7,15 @@ project adheres to semantic versioning.
 ## [Unreleased]
 
 ### Added
+- **Length-normalised exposure measure** (`--measure per-work`). The default
+  `per-word` basis weights a claim's distinctive text by volume; the new
+  `per-work` basis counts each constituent work by its distinctiveness
+  independent of length, so a short highly-distinctive work is not diluted by
+  page count. A disclosed, contestable policy choice, substitutable under the
+  same protocol; the active basis is recorded in every report (markdown + JSON).
+
+
+### Added
 - Command-line interface (`libra`): `score`, `sensitivity`, and `demo`
   subcommands with `--k`, `--w-volume`, `--floor`, `--pool`, `--currency`,
   and `md`/`csv`/`json` output formats.

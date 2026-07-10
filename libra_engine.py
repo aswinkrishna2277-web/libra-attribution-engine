@@ -14,18 +14,20 @@ Conformance (audit queue, all items implemented):
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
-from collections import Counter, defaultdict
-from hashlib import blake2b
+
 import csv
 import io
 import json
 import random
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from hashlib import blake2b
 
 SPEC_VERSION = "0.3"
 ENGINE_VERSION = "0.2"
 SHINGLE_K_DEFAULT = 8
 import datetime as _dt
+
 CURRENT_YEAR = _dt.date.today().year
 
 VALIDATION_STATUS = (
@@ -89,6 +91,7 @@ class Claim:
     effective_volume: float = 0.0
     market: float = 0.0            # max of constituent works (strongest market position)
     share: float = 0.0
+    measure: str = "per-word"
     notes: str = ""
 
 
@@ -97,6 +100,7 @@ class WeightConfig:
     w_volume: float = 0.70
     w_market: float = 0.30
     base_floor: float = 0.15
+    measure: str = "per-word"      # "per-word" (volume-weighted) | "per-work" (length-normalised)
     rationale: dict = field(default_factory=lambda: {
         "w_volume": ("Deduplicated volume measures EXPOSURE — how much of the claim's "
                      "content the training process consumed — the conduct being compensated. "
@@ -107,11 +111,19 @@ class WeightConfig:
         "base_floor": ("Per-se inclusion value: copyright and statutory damages attach per work; "
                        "no included claim may be diluted to zero by volume metrics. "
                        "A TRIBUNAL-SET policy parameter with this disclosed default."),
+        "measure": ("Exposure basis. 'per-word' (default) weights a claim's distinctive "
+                    "text by its volume, so a longer distinctive work draws a larger share "
+                    "— the exposure the training process actually consumed. 'per-work' is a "
+                    "disclosed length-normalised alternative: each constituent work counts by "
+                    "its distinctiveness independent of length, so a short highly-distinctive "
+                    "work is not diluted by page count. A per-work-vs-per-word policy choice, "
+                    "contestable in advance; substitutable under the same protocol."),
     })
 
     def validate(self):
         assert abs(self.w_volume + self.w_market - 1.0) < 1e-9
         assert 0.0 <= self.base_floor < 1.0
+        assert self.measure in ("per-word", "per-work"), f"unknown measure: {self.measure}"
 
 
 # ------------------------------ core engine ------------------------------------
@@ -158,10 +170,14 @@ class CorpusApportionmentEngine:
         return claims
 
     def analyze(self, works: list, k: int | None = None,
-                w_volume: float | None = None, base_floor: float | None = None) -> list:
+                w_volume: float | None = None, base_floor: float | None = None,
+                measure: str | None = None) -> list:
         claims = self.build_claims(works, k)
         wv = self.config.w_volume if w_volume is None else w_volume
         fl = self.config.base_floor if base_floor is None else base_floor
+        ms = self.config.measure if measure is None else measure
+        if ms not in ("per-word", "per-work"):
+            raise ValueError(f"unknown measure: {ms}")
         counts = Counter()
         for c in claims:
             counts.update(c.shingles)
@@ -170,13 +186,20 @@ class CorpusApportionmentEngine:
                 c.uniqueness = sum(1 for s in c.shingles if counts[s] == 1) / len(c.shingles)
             else:
                 c.uniqueness = 0.0
-            c.effective_volume = c.distinct_volume * c.uniqueness
+            if ms == "per-work":
+                # length-normalised: each constituent work counts by claim distinctiveness,
+                # independent of word count (disclosed per-work alternative).
+                c.effective_volume = c.uniqueness * len(c.works)
+            else:
+                # per-word (default): distinctive text weighted by volume.
+                c.effective_volume = c.distinct_volume * c.uniqueness
         total_eff = sum(c.effective_volume for c in claims) or 1.0
         total_mkt = sum(c.market for c in claims) or 1.0
         n = len(claims)
         for c in claims:
             score = wv * (c.effective_volume / total_eff) + (1 - wv) * (c.market / total_mkt)
             c.share = fl / n + (1 - fl) * score
+            c.measure = ms
         return claims
 
     # ------------------------------- outputs -----------------------------------
@@ -193,6 +216,7 @@ class CorpusApportionmentEngine:
                 "n_works": len(c.works),
                 "tokens": c.tokens,
                 "distinct_volume": c.distinct_volume,
+                "measure": getattr(c, "measure", "per-word"),
                 "uniqueness": round(c.uniqueness, 4),
                 "market": round(c.market, 2),
                 "share_pct": round(100 * c.share, 4),
@@ -305,6 +329,7 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency
     cur = CURRENCY_SYMBOLS.get(currency, "$")
     n = len(rows)
     flat = pool / n
+    active_measure = rows[0].get("measure", cfg.measure) if rows else cfg.measure
     eng = [r for r in rows if r["notes"]]
 
     def tbl(rs):
@@ -341,6 +366,7 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency
 | w_volume | {cfg.w_volume} | {cfg.rationale['w_volume']} |
 | w_market | {cfg.w_market} | {cfg.rationale['w_market']} |
 | base_floor | {cfg.base_floor} | {cfg.rationale['base_floor']} |
+| measure | {active_measure} | {cfg.rationale['measure']} |
 
 **A4 published mapping table (discretion lives here, contestable in advance):**
 
@@ -385,6 +411,7 @@ def full_json(rows, sens, cfg, pool, currency: str = "USD") -> str:
         "validation_status": VALIDATION_STATUS,
         "pool": pool, "currency": currency,
         "weights": {"w_volume": cfg.w_volume, "w_market": cfg.w_market, "base_floor": cfg.base_floor},
+        "measure": (rows[0].get("measure", cfg.measure) if rows else cfg.measure),
         "rationale": cfg.rationale, "market_mapping_table": MARKET_MAPPING_TABLE,
         "sensitivity": sens, "allocations": rows,
     }, indent=2)

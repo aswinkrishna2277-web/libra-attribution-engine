@@ -286,3 +286,58 @@ class TestPublishedResults:
         assert self.r["M3_consolidation"]["pass"] is True
         assert self.r["M5_reproducibility"]["identical"] is True
         assert len(self.r["M5_reproducibility"]["sha256"]) == 64  # full digest published
+
+
+class TestLengthNormalisedMeasure:
+    """Phase 3: the disclosed per-work (length-normalised) exposure alternative."""
+
+    def _mk(self, rh, text):
+        from libra_engine import Work
+        return Work(rh, rh, "a", rh, text, True, True, 2000, "", 0)
+
+    def test_default_is_per_word_and_unchanged(self):
+        from libra_engine import CorpusApportionmentEngine, build_demo_corpus
+        eng = CorpusApportionmentEngine()
+        works = build_demo_corpus()
+        a = sorted((c.rightsholder_id, round(c.share, 12)) for c in eng.analyze(works))
+        b = sorted((c.rightsholder_id, round(c.share, 12))
+                   for c in eng.analyze(works, measure="per-word"))
+        assert a == b  # explicit default identical to implicit
+
+    def test_per_work_shares_sum_to_one(self):
+        from libra_engine import CorpusApportionmentEngine, build_demo_corpus
+        eng = CorpusApportionmentEngine()
+        claims = eng.analyze(build_demo_corpus(), measure="per-work")
+        assert abs(sum(c.share for c in claims) - 1.0) < 1e-9
+
+    def test_per_work_normalises_length(self):
+        # equal-distinctiveness works of very different length: per-work brings them level
+        from libra_engine import CorpusApportionmentEngine
+        eng = CorpusApportionmentEngine()
+        short = self._mk("SHORT", " ".join(f"alpha{i}" for i in range(40)))
+        long = self._mk("LONG", " ".join(f"beta{i}" for i in range(600)))
+        pw = {c.rightsholder_id: c.share for c in eng.analyze([short, long], measure="per-word")}
+        pk = {c.rightsholder_id: c.share for c in eng.analyze([short, long], measure="per-work")}
+        # per-word favours the long work more than per-work does
+        assert pw["LONG"] - pw["SHORT"] > pk["LONG"] - pk["SHORT"]
+        # per-work makes them (nearly) equal on exposure
+        assert abs(pk["LONG"] - pk["SHORT"]) < abs(pw["LONG"] - pw["SHORT"])
+
+    def test_invalid_measure_rejected(self):
+        import pytest
+        from libra_engine import CorpusApportionmentEngine
+        eng = CorpusApportionmentEngine()
+        with pytest.raises(ValueError):
+            eng.analyze([self._mk("A", "x y z " * 20)], measure="nonsense")
+
+    def test_measure_disclosed_in_report(self):
+        from libra_engine import (CorpusApportionmentEngine, build_demo_corpus,
+                                   report_markdown)
+        eng = CorpusApportionmentEngine()
+        works = build_demo_corpus()
+        claims = eng.analyze(works, measure="per-work")
+        rows = eng.allocate(claims, 1_000_000)
+        sens = eng.sensitivity(works)
+        md = report_markdown(rows, sens, eng.config, 1_000_000, 8,
+                             synthetic_metadata=True)
+        assert "per-work" in md and "measure" in md
