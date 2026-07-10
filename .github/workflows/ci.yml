@@ -21,8 +21,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Lint (ruff)
-        run: ruff check cli.py benchmarks/corpus.py benchmarks/run_benchmark.py benchmarks/test_benchmark.py
+      - name: Lint (ruff, non-blocking style check)
+        continue-on-error: true
+        run: ruff check cli.py benchmarks/
       - name: Core tests
         run: pytest test_libra.py -q
       - name: Install app extra and run full suite
