@@ -341,3 +341,58 @@ class TestLengthNormalisedMeasure:
         md = report_markdown(rows, sens, eng.config, 1_000_000, 8,
                              synthetic_metadata=True)
         assert "per-work" in md and "measure" in md
+
+
+class TestFuzzyMatching:
+    """Phase 3: OCR-tolerant character-shingle matching (opt-in, disclosed)."""
+
+    def _mk(self, rh, text):
+        from libra_engine import Work
+        return Work(rh, rh, "a", rh, text, True, True, 2000, "", 0)
+
+    def test_default_exact_unchanged(self):
+        from libra_engine import CorpusApportionmentEngine, build_demo_corpus
+        eng = CorpusApportionmentEngine()
+        works = build_demo_corpus()
+        a = sorted((c.rightsholder_id, round(c.share, 12)) for c in eng.analyze(works))
+        b = sorted((c.rightsholder_id, round(c.share, 12))
+                   for c in eng.analyze(works, fuzzy=False))
+        assert a == b
+
+    def test_fuzzy_shares_sum_to_one(self):
+        from libra_engine import CorpusApportionmentEngine, build_demo_corpus
+        eng = CorpusApportionmentEngine()
+        claims = eng.analyze(build_demo_corpus(), fuzzy=True)
+        assert abs(sum(c.share for c in claims) - 1.0) < 1e-9
+
+    def test_fuzzy_survives_ocr_where_exact_fails(self):
+        # a clean work and its OCR-garbled twin (different rightsholders):
+        # exact matching sees them as unrelated; fuzzy sees the overlap.
+        import random
+        from libra_engine import CorpusApportionmentEngine
+        rng = random.Random(0)
+        base = " ".join(f"token{i}word" for i in range(300))
+        garbled = "".join(
+            (rng.choice("0123456789") if (ch.isalpha() and rng.random() < 0.05) else ch)
+            for ch in base)
+        third = " ".join(f"unrelated{i}term" for i in range(300))
+        exact = CorpusApportionmentEngine()
+        fuzzy = CorpusApportionmentEngine()
+        works = [self._mk("A", base), self._mk("B", garbled), self._mk("C", third)]
+        ux = {c.rightsholder_id: c.uniqueness for c in exact.analyze(works)}
+        uf = {c.rightsholder_id: c.uniqueness for c in fuzzy.analyze(works, fuzzy=True)}
+        # exact: garbled twin looks unique (undetected overlap)
+        assert ux["A"] > 0.8 and ux["B"] > 0.8
+        # fuzzy: the shared pair reads as NON-unique, the unrelated work stays unique
+        assert uf["A"] < 0.8 and uf["B"] < 0.8
+        assert uf["C"] > uf["A"]
+
+    def test_fuzzy_disclosed_in_report(self):
+        from libra_engine import (CorpusApportionmentEngine, build_demo_corpus,
+                                   report_markdown)
+        eng = CorpusApportionmentEngine()
+        works = build_demo_corpus()
+        rows = eng.allocate(eng.analyze(works, fuzzy=True), 1_000_000)
+        md = report_markdown(rows, eng.sensitivity(works), eng.config, 1_000_000, 8,
+                             synthetic_metadata=True)
+        assert "fuzzy" in md and "matching" in md

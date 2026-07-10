@@ -26,6 +26,7 @@ from hashlib import blake2b
 SPEC_VERSION = "0.3"
 ENGINE_VERSION = "0.2"
 SHINGLE_K_DEFAULT = 8
+CHAR_K_DEFAULT = 14
 import datetime as _dt
 
 CURRENT_YEAR = _dt.date.today().year
@@ -92,6 +93,7 @@ class Claim:
     market: float = 0.0            # max of constituent works (strongest market position)
     share: float = 0.0
     measure: str = "per-word"
+    fuzzy: bool = False
     notes: str = ""
 
 
@@ -101,6 +103,8 @@ class WeightConfig:
     w_market: float = 0.30
     base_floor: float = 0.15
     measure: str = "per-word"      # "per-word" (volume-weighted) | "per-work" (length-normalised)
+    fuzzy: bool = False            # False: exact word-shingles | True: char-shingles (OCR-tolerant)
+    char_k: int = 14               # character-shingle length used when fuzzy is on
     rationale: dict = field(default_factory=lambda: {
         "w_volume": ("Deduplicated volume measures EXPOSURE — how much of the claim's "
                      "content the training process consumed — the conduct being compensated. "
@@ -111,6 +115,12 @@ class WeightConfig:
         "base_floor": ("Per-se inclusion value: copyright and statutory damages attach per work; "
                        "no included claim may be diluted to zero by volume metrics. "
                        "A TRIBUNAL-SET policy parameter with this disclosed default."),
+        "fuzzy": ("Matching basis. Exact (default) hashes 8-word shingles: fully reproducible, "
+                  "but a single altered character breaks a whole shingle, so it is brittle to "
+                  "OCR/scan corruption. Fuzzy mode hashes overlapping 5-character shingles over "
+                  "normalised text, so an OCR-garbled passage still matches its clean source. "
+                  "A disclosed robustness/precision trade-off, contestable in advance; exact "
+                  "remains the default for reproducibility."),
         "measure": ("Exposure basis. 'per-word' (default) weights a claim's distinctive "
                     "text by its volume, so a longer distinctive work draws a larger share "
                     "— the exposure the training process actually consumed. 'per-work' is a "
@@ -124,11 +134,47 @@ class WeightConfig:
         assert abs(self.w_volume + self.w_market - 1.0) < 1e-9
         assert 0.0 <= self.base_floor < 1.0
         assert self.measure in ("per-word", "per-work"), f"unknown measure: {self.measure}"
+        assert self.char_k >= 2, "char_k must be >= 2"
 
 
 # ------------------------------ core engine ------------------------------------
 
-def _shingles(text: str, k: int) -> set:
+def _normalise_chars(text: str) -> str:
+    """Lowercase; collapse every run of non-alphanumeric characters to one space.
+    Removes case and punctuation variation so OCR/edition noise there does not
+    fragment matches. Used only by the fuzzy (character-shingle) mode."""
+    out, prev_space = [], False
+    for ch in text.lower():
+        if ch.isalnum():
+            out.append(ch)
+            prev_space = False
+        elif not prev_space:
+            out.append(" ")
+            prev_space = True
+    return "".join(out).strip()
+
+
+def _shingles(text: str, k: int, fuzzy: bool = False, char_k: int = CHAR_K_DEFAULT) -> set:
+    """Set of hashed shingles for a work.
+
+    Default (fuzzy=False): overlapping k-WORD shingles — exact matching.
+    fuzzy=True: overlapping char_k-CHARACTER shingles over normalised text — a single
+    corrupted character breaks only the few char-grams overlapping it, so most of an
+    OCR-garbled passage still matches its clean source (approximate matching).
+    """
+    if fuzzy:
+        norm = _normalise_chars(text)
+        if not norm:
+            return set()
+        if len(norm) < char_k:
+            spans = [norm]
+        else:
+            spans = (norm[i:i + char_k] for i in range(len(norm) - char_k + 1))
+        out = set()
+        for sp in spans:
+            h = blake2b(sp.encode("utf-8"), digest_size=8)
+            out.add(int.from_bytes(h.digest(), "big"))
+        return out
     toks = text.lower().split()
     if not toks:
         return set()
@@ -149,9 +195,11 @@ class CorpusApportionmentEngine:
         self.config.validate()
         self.shingle_k = shingle_k
 
-    def build_claims(self, works: list, k: int | None = None) -> list:
+    def build_claims(self, works: list, k: int | None = None,
+                     fuzzy: bool | None = None) -> list:
         """Standard §4 A2 step 1: consolidate to rightsholder-claim level."""
         k = k or self.shingle_k
+        fz = self.config.fuzzy if fuzzy is None else fuzzy
         groups = defaultdict(list)
         for w in works:
             w.tokens = len(w.text.split())
@@ -160,7 +208,7 @@ class CorpusApportionmentEngine:
         for rh, ws in groups.items():
             c = Claim(rightsholder_id=rh, works=ws)
             for w in ws:
-                c.shingles |= _shingles(w.text, k)   # union: within-claim duplication collapses here
+                c.shingles |= _shingles(w.text, k, fuzzy=fz, char_k=self.config.char_k)
                 c.tokens += w.tokens
                 if w.notes:
                     c.notes = (c.notes + "; " + w.notes).strip("; ")
@@ -171,8 +219,8 @@ class CorpusApportionmentEngine:
 
     def analyze(self, works: list, k: int | None = None,
                 w_volume: float | None = None, base_floor: float | None = None,
-                measure: str | None = None) -> list:
-        claims = self.build_claims(works, k)
+                measure: str | None = None, fuzzy: bool | None = None) -> list:
+        claims = self.build_claims(works, k, fuzzy=fuzzy)
         wv = self.config.w_volume if w_volume is None else w_volume
         fl = self.config.base_floor if base_floor is None else base_floor
         ms = self.config.measure if measure is None else measure
@@ -200,6 +248,7 @@ class CorpusApportionmentEngine:
             score = wv * (c.effective_volume / total_eff) + (1 - wv) * (c.market / total_mkt)
             c.share = fl / n + (1 - fl) * score
             c.measure = ms
+            c.fuzzy = self.config.fuzzy if fuzzy is None else fuzzy
         return claims
 
     # ------------------------------- outputs -----------------------------------
@@ -217,6 +266,7 @@ class CorpusApportionmentEngine:
                 "tokens": c.tokens,
                 "distinct_volume": c.distinct_volume,
                 "measure": getattr(c, "measure", "per-word"),
+                "fuzzy": getattr(c, "fuzzy", False),
                 "uniqueness": round(c.uniqueness, 4),
                 "market": round(c.market, 2),
                 "share_pct": round(100 * c.share, 4),
@@ -330,6 +380,7 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency
     n = len(rows)
     flat = pool / n
     active_measure = rows[0].get("measure", cfg.measure) if rows else cfg.measure
+    active_fuzzy = rows[0].get("fuzzy", cfg.fuzzy) if rows else cfg.fuzzy
     eng = [r for r in rows if r["notes"]]
 
     def tbl(rs):
@@ -367,6 +418,7 @@ def report_markdown(rows, sens, cfg, pool, k, synthetic_metadata: bool, currency
 | w_market | {cfg.w_market} | {cfg.rationale['w_market']} |
 | base_floor | {cfg.base_floor} | {cfg.rationale['base_floor']} |
 | measure | {active_measure} | {cfg.rationale['measure']} |
+| matching | {'fuzzy (char-shingle)' if active_fuzzy else 'exact (word-shingle)'} | {cfg.rationale['fuzzy']} |
 
 **A4 published mapping table (discretion lives here, contestable in advance):**
 
@@ -412,6 +464,7 @@ def full_json(rows, sens, cfg, pool, currency: str = "USD") -> str:
         "pool": pool, "currency": currency,
         "weights": {"w_volume": cfg.w_volume, "w_market": cfg.w_market, "base_floor": cfg.base_floor},
         "measure": (rows[0].get("measure", cfg.measure) if rows else cfg.measure),
+        "fuzzy": (rows[0].get("fuzzy", cfg.fuzzy) if rows else cfg.fuzzy),
         "rationale": cfg.rationale, "market_mapping_table": MARKET_MAPPING_TABLE,
         "sensitivity": sens, "allocations": rows,
     }, indent=2)

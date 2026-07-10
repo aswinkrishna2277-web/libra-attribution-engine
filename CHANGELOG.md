@@ -7,6 +7,11 @@ project adheres to semantic versioning.
 ## [Unreleased]
 
 ### Added
+- **Fuzzy (OCR-tolerant) matching** (`--fuzzy`). Optional character-shingle
+  matching that tolerates scan/OCR corruption: on the scale-and-noise benchmark
+  it restores shared-text detection to AUC 1.00 at 10% character noise (and 0.98
+  at 20%), where exact 8-word shingles fall to chance. Exact matching remains the
+  default for reproducibility; the active basis is disclosed in every report.
 - **Length-normalised exposure measure** (`--measure per-work`). The default
   `per-word` basis weights a claim's distinctive text by volume; the new
   `per-work` basis counts each constituent work by its distinctiveness
