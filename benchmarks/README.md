@@ -84,3 +84,31 @@ All benchmark parameters are recorded in the output JSON (`benchmark_scale_resul
 corpus size, number of shared groups, copy fraction, seed, noise levels, shingle
 length *k*, exposure weight, and floor. Changing any of them changes the reported
 numbers, and every choice is on the record.
+
+## Fuzzy matching: recovering OCR robustness
+
+The OCR result above is a property of *exact* 8-word shingles: one corrupted
+character changes a whole shingle, so detection collapses as scan noise rises.
+The engine's optional fuzzy mode (`--fuzzy`, character-shingle matching) is
+designed to fix exactly this. Re-running the identical benchmark with
+`--fuzzy` gives:
+
+| OCR noise | Exact (default) | Fuzzy (`--fuzzy`) |
+|---|---|---|
+| 0% | 1.00 | 1.00 |
+| 1% | 1.00 | 1.00 |
+| 2% | 1.00 | 1.00 |
+| 5% | 0.84 | 1.00 |
+| 10% | 0.52 | 1.00 |
+| 20% | 0.50 (chance) | 0.98 |
+
+Fuzzy matching restores near-perfect detection through heavy OCR corruption
+where exact matching falls to chance, while clean-corpus detection stays perfect.
+The trade-off is disclosed: exact matching is more directly reproducible and
+remains the default; fuzzy is the opt-in mode for scanned or OCR'd corpora.
+
+Reproduce:
+
+    python run_benchmark.py --n 200            # exact (before)
+    python run_benchmark.py --n 200 --fuzzy    # fuzzy (after)
+

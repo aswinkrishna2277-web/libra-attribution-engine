@@ -132,6 +132,8 @@ def main(argv=None):
                     help="noise rates to sweep")
     ap.add_argument("--out", type=str, default="benchmark_scale_results.json")
     ap.add_argument("--quick", action="store_true", help="tiny fast run for CI (n=40)")
+    ap.add_argument("--fuzzy", action="store_true",
+                    help="use OCR-tolerant character-shingle matching")
     args = ap.parse_args(argv)
 
     if args.quick:
@@ -140,7 +142,10 @@ def main(argv=None):
     base_texts = _load_texts(Path(args.texts)) if args.texts else None
     n_desc = f"{len(base_texts)} real texts" if base_texts else f"{args.n} synthetic works"
     works_meta, is_shared = build_corpus(args.n, args.copy_frac, args.seed, base_texts)
-    engine = CorpusApportionmentEngine()
+    from libra_engine import WeightConfig
+    _cfg = WeightConfig()
+    _cfg.fuzzy = args.fuzzy
+    engine = CorpusApportionmentEngine(config=_cfg)
 
     # clean baseline shares (for drift measurement)
     base_uniq, base_share = score_condition(works_meta, "none", 0.0, args.seed, engine)
@@ -152,7 +157,8 @@ def main(argv=None):
     results = {"config": {"corpus": n_desc, "n_originals": args.n if not base_texts else len(base_texts),
                           "n_shared_works": len(shared_ids), "copy_frac": args.copy_frac, "seed": args.seed,
                           "levels": args.levels, "shingle_k": engine.shingle_k,
-                          "w_volume": engine.config.w_volume, "base_floor": engine.config.base_floor},
+                          "w_volume": engine.config.w_volume, "base_floor": engine.config.base_floor,
+                          "fuzzy": args.fuzzy},
                "conditions": []}
 
     for noise in ["ocr", "edition", "paraphrase"]:
