@@ -204,6 +204,7 @@
   },
   "M5_reproducibility": {
     "identical": true,
-    "sha256": "65f3ff1fccae2eaf"
+    "digest": "65f3ff1fccae2eaf",
+    "digest_note": "short blake2b fingerprint (8 bytes); 'identical' compares the full re-run output byte-for-byte"
   }
 }

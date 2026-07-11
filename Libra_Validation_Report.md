@@ -45,7 +45,7 @@ Donor-side measurements mirror copier-side values, empirically confirming the do
 
 **M4 — Anthology: engineered own-fraction 0.3333, measured 0.3380** (error 0.0047, attributable to novel shingles formed at chunk boundaries).
 
-**M5 — Reproducibility: PASS.** Independent rebuild and re-evaluation produced bit-identical results (SHA-256 verified).
+**M5 — Reproducibility: PASS.** Independent rebuild and re-evaluation produced bit-identical results, confirmed by comparing the full re-run output and a stored digest fingerprint.
 
 ## 4. Honest limits of this validation
 
@@ -61,4 +61,4 @@ Engine disclosure updated from "pre-validation prototype" to: **validated agains
 
 ## 6. Reproducibility note (supersedes the earlier asset note)
 
-Benchmark v1 is published in full: the construction and evaluation script (`benchmark.py`), the complete results and manifest (`benchmark_results.json`), and the corpus recipe (README, "Reproduce the benchmark") are all in the public repository under Apache-2.0. The validation is therefore reproducible end-to-end by any stranger — ground-truth construction included; runs are seeded and deterministic, and the results file carries a full SHA-256 digest for comparison. Authorship and priority rest on the published, timestamped record itself.
+Benchmark v1 is published in full: the construction and evaluation script (`benchmark.py`), the complete results and manifest (`benchmark_results.json`), and the corpus recipe (README, "Reproduce the benchmark") are all in the public repository under Apache-2.0. The validation is therefore reproducible end-to-end by any stranger — ground-truth construction included; runs are seeded and deterministic, and the results file carries a digest fingerprint for comparison. Authorship and priority rest on the published, timestamped record itself.

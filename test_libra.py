@@ -285,7 +285,7 @@ class TestPublishedResults:
         assert self.r["M2_false_positive_baseline"]["max_false_overlap"] <= 0.0001
         assert self.r["M3_consolidation"]["pass"] is True
         assert self.r["M5_reproducibility"]["identical"] is True
-        assert len(self.r["M5_reproducibility"]["sha256"]) == 64  # full digest published
+        assert self.r["M5_reproducibility"]["digest"]  # reproducibility fingerprint published
 
 
 class TestLengthNormalisedMeasure:
